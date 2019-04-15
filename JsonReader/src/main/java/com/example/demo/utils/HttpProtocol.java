@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import com.example.demo.exceptionhandler.BadRequestException;
+
 public class HttpProtocol {
 	
 	private static HttpURLConnection con = null;
@@ -24,7 +26,7 @@ public class HttpProtocol {
 			con.connect();
 		}
 		catch(IOException e) {
-			
+			throw new BadRequestException("Unable to reach URI: "+uri+"\nERR CODE : 1018");
 		}
 		
 		return con;

@@ -13,7 +13,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.springframework.stereotype.Service;
 
-import com.demo.example.exceptionhandler.BadRequestException;
+import com.example.demo.exceptionhandler.BadRequestException;
+import com.example.demo.exceptionhandler.CustomException;
 import com.example.demo.model.DatasetDTO;
 import com.example.demo.model.DealerDTO;
 import com.example.demo.model.DealersDTO;
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class JsonReaderServiceImpl implements JsonReaderService {
 
 	private String datasetId = null;
+	private String uri = null;
 	private HttpURLConnection con = null;
 	
 	private BufferedReader br = null;
@@ -39,7 +41,7 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 	
 	public String getDatasetId() {
 		DatasetDTO result = null;
-		String uri = "http://vautointerview.azurewebsites.net/api/datasetId";
+		uri = "http://vautointerview.azurewebsites.net/api/datasetId";
 
 		try {
 			con = HttpProtocol.getInstance(uri);
@@ -55,10 +57,9 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 			}
 			con.disconnect();
 		}
-		catch(BadRequestException | IOException e) {
-			throw new BadRequestException("ERR CODE : 1028");
+		catch(IOException e) {
+			throw new CustomException("ERR CODE : 1028");
 		}
-		
 		this.datasetId = result.getDatasetId();
 		return datasetId;
 	}
@@ -68,7 +69,7 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 	
 	public List<Integer> getVehicles(String datasetId) {
 		GroupOfVehiclesDTO result = null;
-		String uri = "http://vautointerview.azurewebsites.net/api/" + datasetId + "/vehicles";
+		uri = "http://vautointerview.azurewebsites.net/api/" + datasetId + "/vehicles";
 		
 		try {
 			con = HttpProtocol.getInstance(uri);
@@ -84,10 +85,9 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 			}
 			con.disconnect();
 		}
-		catch(BadRequestException | IOException e) {
-			throw new BadRequestException("ERR CODE : 1038");
+		catch(IOException e) {
+			throw new CustomException("ERR CODE : 1038");
 		}
-		
 		return result.getVehicleIds();
 	}
 	
@@ -96,7 +96,7 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 	
 	public VehicleInfoDTO getTheVehicleInfo(String datasetId, long vehicleId) {
 		VehicleInfoDTO result = null;
-		String uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/vehicles/"+vehicleId;
+		uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/vehicles/"+vehicleId;
 		
 		try {
 			con = HttpProtocol.getInstance(uri);
@@ -112,10 +112,9 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 			}
 			con.disconnect();
 		}
-		catch(BadRequestException | IOException e) {
-			throw new BadRequestException("ERR CODE : 1048");
+		catch(IOException e) {
+			throw new CustomException("ERR CODE : 1048");
 		}
-		
 		return result;
 	}
 	
@@ -123,7 +122,7 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 	
 	public DealerDTO getTheDealerInfo(String datasetId, long dealerId) {
 		DealerDTO result = null;
-		String uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/dealers/"+dealerId;
+		uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/dealers/"+dealerId;
 		
 		try {
 			con = HttpProtocol.getInstance(uri);
@@ -139,10 +138,9 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 			}
 			con.disconnect();
 		}
-		catch(BadRequestException | IOException e) {
-			throw new BadRequestException("ERR CODE : 1058");
+		catch(IOException e) {
+			throw new CustomException("ERR CODE : 1058");
 		}
-		
 		return result;
 	}
 	
@@ -188,8 +186,9 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		DefaultHttpClient httpClient = new DefaultHttpClient();
 		
-		try { 
-			HttpPost postRequest = new HttpPost("http://vautointerview.azurewebsites.net/api/"+datasetId+ "/answer");
+		try {
+			uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+ "/answer";
+			HttpPost postRequest = new HttpPost(uri);
 			String json = mapper.writeValueAsString(result);
 			StringEntity testEntity = new StringEntity(json);
 			
@@ -207,15 +206,18 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 			
 			status = sb.toString();
 		}
-		catch(BadRequestException | IOException e) {
-			throw new BadRequestException("ERR CODE : 1068");
+		catch(BadRequestException e) {
+			throw new BadRequestException("Unable to reach URI: "+uri+"\nERR CODE : 1028");
+		}
+		catch(IOException e) {
+			throw new CustomException("ERR CODE : 1068");
 		}
 		finally {
 			httpClient.getConnectionManager().shutdown();
 			HttpProtocol.shutdown();
 			mapper = null;
+			sb = null;
 		}
-		
 		return status;
 	}
 	
