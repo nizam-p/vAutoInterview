@@ -1,9 +1,9 @@
 package com.example.demo.serviceImpl;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,12 +13,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.springframework.stereotype.Service;
 
+import com.demo.example.exceptionhandler.BadRequestException;
 import com.example.demo.model.DatasetDTO;
 import com.example.demo.model.DealerDTO;
 import com.example.demo.model.DealersDTO;
 import com.example.demo.model.GroupOfVehiclesDTO;
 import com.example.demo.model.VehicleInfoDTO;
 import com.example.demo.service.JsonReaderService;
+import com.example.demo.utils.HttpProtocol;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -26,34 +28,37 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class JsonReaderServiceImpl implements JsonReaderService {
 
 	private String datasetId = null;
+	private HttpURLConnection con = null;
+	
+	private BufferedReader br = null;
+	private StringBuffer sb = null;
+	private String inputLine = null;
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	
-	public String getDatasetId() throws Exception {
-		DatasetDTO result = new DatasetDTO();
-		
-		String url = "http://vautointerview.azurewebsites.net/api/datasetId";
-		URL obj = new URL(url);
+	
+	public String getDatasetId() {
+		DatasetDTO result = null;
+		String uri = "http://vautointerview.azurewebsites.net/api/datasetId";
 
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
-		con.setRequestProperty("Content-Type", "application/json");
-		con.connect();
-
-		if (con.getResponseCode() == 200) {
-
-			ObjectMapper mapper = new ObjectMapper();
-
-			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			StringBuffer sb = new StringBuffer();
-			String inputline;
-
-			while ((inputline = br.readLine()) != null)
-				sb.append(inputline);
-			br.close();
-
-			result = mapper.readValue(sb.toString(), DatasetDTO.class);
+		try {
+			con = HttpProtocol.getInstance(uri);
+			if (con.getResponseCode() == 200) {
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				sb = new StringBuffer();
+	
+				while ((inputLine = br.readLine()) != null)
+					sb.append(inputLine);
+				br.close();
+	
+				result = mapper.readValue(sb.toString(), DatasetDTO.class);
+			}
+			con.disconnect();
 		}
-		con.disconnect();
+		catch(BadRequestException | IOException e) {
+			throw new BadRequestException("ERR CODE : 1028");
+		}
+		
 		this.datasetId = result.getDatasetId();
 		return datasetId;
 	}
@@ -61,108 +66,96 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 	
 	
 	
-	public List<Integer> getVehicles(String datasetId) throws Exception {
-		GroupOfVehiclesDTO result = new GroupOfVehiclesDTO();
-
-		String url = "http://vautointerview.azurewebsites.net/api/" + datasetId + "/vehicles";
-		URL obj = new URL(url);
-
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
-		con.setRequestProperty("Content-Type", "application/json");
-		con.connect();
-
-		if (con.getResponseCode() == 200) {
-
-			ObjectMapper mapper = new ObjectMapper();
-
-			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			StringBuffer sb = new StringBuffer();
-			String inputline;
-
-			while ((inputline = br.readLine()) != null)
-				sb.append(inputline);
-			br.close();
-
-			result = mapper.readValue(sb.toString(), GroupOfVehiclesDTO.class);
+	public List<Integer> getVehicles(String datasetId) {
+		GroupOfVehiclesDTO result = null;
+		String uri = "http://vautointerview.azurewebsites.net/api/" + datasetId + "/vehicles";
+		
+		try {
+			con = HttpProtocol.getInstance(uri);
+			if (con.getResponseCode() == 200) {
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				sb = new StringBuffer();
+	
+				while ((inputLine = br.readLine()) != null)
+					sb.append(inputLine);
+				br.close();
+	
+				result = mapper.readValue(sb.toString(), GroupOfVehiclesDTO.class);
+			}
+			con.disconnect();
 		}
-		con.disconnect();
+		catch(BadRequestException | IOException e) {
+			throw new BadRequestException("ERR CODE : 1038");
+		}
+		
 		return result.getVehicleIds();
 	}
 	
 
 	
 	
-	public VehicleInfoDTO getTheVehicleInfo(String datasetId, long vehicleId) throws Exception{
+	public VehicleInfoDTO getTheVehicleInfo(String datasetId, long vehicleId) {
 		VehicleInfoDTO result = null;
+		String uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/vehicles/"+vehicleId;
 		
-		String url = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/vehicles/"+vehicleId;
-		URL obj = new URL(url);
+		try {
+			con = HttpProtocol.getInstance(uri);
+			if(con.getResponseCode() == 200) {
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				sb = new StringBuffer();
 		
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
-		con.setRequestProperty("Content-Type", "application/json");
-		con.connect();
-		
-		if(con.getResponseCode() == 200) {
-	
-			ObjectMapper mapper = new ObjectMapper();
-	
-			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			StringBuffer sb = new StringBuffer();
-			String inputline;
-	
-			while ((inputline = br.readLine()) != null)
-				sb.append(inputline);
-			br.close();
-			
-			result = mapper.readValue(sb.toString(), VehicleInfoDTO.class);
+				while ((inputLine = br.readLine()) != null)
+					sb.append(inputLine);
+				br.close();
+				
+				result = mapper.readValue(sb.toString(), VehicleInfoDTO.class);
+			}
+			con.disconnect();
 		}
-		con.disconnect();
+		catch(BadRequestException | IOException e) {
+			throw new BadRequestException("ERR CODE : 1048");
+		}
+		
 		return result;
 	}
 	
 	
 	
-	public DealerDTO getTheDealerInfo(String datasetId, long dealerId) throws Exception{
+	public DealerDTO getTheDealerInfo(String datasetId, long dealerId) {
 		DealerDTO result = null;
+		String uri = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/dealers/"+dealerId;
 		
-		String url = "http://vautointerview.azurewebsites.net/api/"+datasetId+"/dealers/"+dealerId;
-		URL obj = new URL(url);
+		try {
+			con = HttpProtocol.getInstance(uri);
+			if(con.getResponseCode() == 200) {
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				sb = new StringBuffer();
 		
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
-		con.setRequestProperty("Content-Type", "application/json");
-		con.connect();
-		
-		if(con.getResponseCode() == 200) {
-	
-			ObjectMapper mapper = new ObjectMapper();
-	
-			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			StringBuffer sb = new StringBuffer();
-			String inputline;
-	
-			while ((inputline = br.readLine()) != null)
-				sb.append(inputline);
-			br.close();
-			
-			result = mapper.readValue(sb.toString(), DealerDTO.class);
+				while ((inputLine = br.readLine()) != null)
+					sb.append(inputLine);
+				br.close();
+				
+				result = mapper.readValue(sb.toString(), DealerDTO.class);
+			}
+			con.disconnect();
 		}
-		con.disconnect();
+		catch(BadRequestException | IOException e) {
+			throw new BadRequestException("ERR CODE : 1058");
+		}
+		
 		return result;
 	}
 	
 	
 
-	public DealersDTO getAllDealersWithTheirCarsInfo() throws Exception {
+	public DealersDTO getAllDealersWithTheirCarsInfo() {
 		DealersDTO result = new DealersDTO();
 		int index = -1;
 
 		DealerDTO dealer = null;
 		VehicleInfoDTO newVehicle = null;
 
-		String datasetId = getDatasetId();
+		datasetId = getDatasetId();
 		
 		for(Integer vehicleId : getVehicles(datasetId)) {
 			newVehicle = getTheVehicleInfo(datasetId, vehicleId);
@@ -188,19 +181,16 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 
 
 
-	public String postTheResult() throws Exception {
+	public String postTheResult() {
 		String status = null;
 		DealersDTO result = getAllDealersWithTheirCarsInfo();
 		
-		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		
-		String json = mapper.writeValueAsString(result);
 		DefaultHttpClient httpClient = new DefaultHttpClient();
 		
 		try { 
 			HttpPost postRequest = new HttpPost("http://vautointerview.azurewebsites.net/api/"+datasetId+ "/answer");
-			
+			String json = mapper.writeValueAsString(result);
 			StringEntity testEntity = new StringEntity(json);
 			
 			postRequest.addHeader("Content-Type", "application/json");
@@ -208,19 +198,24 @@ public class JsonReaderServiceImpl implements JsonReaderService {
 
 			HttpResponse response = httpClient.execute(postRequest);
 			
-			BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-			StringBuffer sb = new StringBuffer();
-			String inputline;
+			br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			sb = new StringBuffer();
 
-			while ((inputline = br.readLine()) != null)
-				sb.append(inputline);
+			while ((inputLine = br.readLine()) != null)
+				sb.append(inputLine);
 			br.close();
 			
 			status = sb.toString();
 		}
-		finally {
-			httpClient.getConnectionManager().shutdown(); 
+		catch(BadRequestException | IOException e) {
+			throw new BadRequestException("ERR CODE : 1068");
 		}
+		finally {
+			httpClient.getConnectionManager().shutdown();
+			HttpProtocol.shutdown();
+			mapper = null;
+		}
+		
 		return status;
 	}
 	
